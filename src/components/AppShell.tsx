@@ -76,8 +76,17 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     dealStorage.getAll();
     const warning = dealStorage.consumeRecoveryWarning();
-    if (warning) toast.warning("Prototype data restored", { description: warning });
-  }, []);
+    if (warning) toast.warning(t("toast.prototypeDataRestored"), { description: t("toast.descriptionWarning") });
+
+    document.documentElement.lang = i18n.language;
+    const handleLanguageChange = (lng: string) => {
+      document.documentElement.lang = lng;
+    };
+    i18n.on('languageChanged', handleLanguageChange);
+    return () => {
+      i18n.off('languageChanged', handleLanguageChange);
+    };
+  }, [t, i18n]);
 
   return (
     <div className="min-h-screen bg-[#F5F7F9] text-[#16365D]">
