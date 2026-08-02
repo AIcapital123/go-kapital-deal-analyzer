@@ -1,0 +1,114 @@
+import { useState, type ReactNode } from "react";
+import { NavLink } from "react-router-dom";
+import { BarChart3, BriefcaseBusiness, ChevronLeft, ChevronRight, FilePlus2, Menu, Settings, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const navigation = [
+  { label: "Dashboard", path: "/", icon: BarChart3 },
+  { label: "New Deal", path: "/deals/new", icon: FilePlus2 },
+  { label: "Deals", path: "/deals", icon: BriefcaseBusiness },
+  { label: "Settings", path: "/settings", icon: Settings },
+];
+
+interface SidebarContentProps {
+  collapsed?: boolean;
+  onNavigate?: () => void;
+}
+
+const SidebarContent = ({ collapsed = false, onNavigate }: SidebarContentProps) => (
+  <div className="flex h-full flex-col bg-[#16365D] text-white">
+    <div className={cn("flex h-20 items-center border-b border-white/10 px-5", collapsed && "justify-center px-2")}>
+      {collapsed ? (
+        <span className="text-lg font-extrabold tracking-tight text-[#69C966]">GK</span>
+      ) : (
+        <div>
+          <div className="text-xl font-extrabold tracking-tight">Go<span className="text-[#69C966]">Kapital</span></div>
+          <div className="mt-0.5 text-xs font-medium text-slate-300">Deal Analyzer</div>
+        </div>
+      )}
+    </div>
+
+    <nav className="flex-1 space-y-1.5 px-3 py-5" aria-label="Primary navigation">
+      {navigation.map(({ label, path, icon: Icon }) => (
+        <NavLink
+          key={path}
+          to={path}
+          end={path === "/"}
+          onClick={onNavigate}
+          className={({ isActive }) => cn(
+            "flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
+            isActive && "bg-[#4AB547] text-white hover:bg-[#43A840]",
+            collapsed && "justify-center px-0",
+          )}
+          title={collapsed ? label : undefined}
+        >
+          <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />
+          {!collapsed && <span>{label}</span>}
+        </NavLink>
+      ))}
+    </nav>
+
+    {!collapsed && (
+      <div className="border-t border-white/10 px-5 py-4 text-[11px] leading-relaxed text-slate-400">
+        GoKapital Internal Prototype
+      </div>
+    )}
+  </div>
+);
+
+export const AppShell = ({ children }: { children: ReactNode }) => {
+  const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  return (
+    <div className="min-h-screen bg-[#F5F7F9] text-[#16365D]">
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 lg:block",
+        collapsed ? "w-20" : "w-56",
+      )}>
+        <SidebarContent collapsed={collapsed} />
+        <button
+          type="button"
+          onClick={() => setCollapsed((value) => !value)}
+          className="absolute -right-3 bottom-7 flex h-7 w-7 items-center justify-center rounded-full border border-[#DDE3E8] bg-white text-[#16365D] shadow-sm hover:bg-slate-50"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+        </button>
+      </aside>
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden">
+          <button className="absolute inset-0 bg-[#102A49]/60" aria-label="Close navigation" onClick={() => setMobileOpen(false)} />
+          <aside className="relative h-full w-72 shadow-xl">
+            <button
+              type="button"
+              onClick={() => setMobileOpen(false)}
+              className="absolute right-3 top-4 z-10 rounded-lg p-2 text-slate-300 hover:bg-white/10 hover:text-white"
+              aria-label="Close navigation"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            <SidebarContent onNavigate={() => setMobileOpen(false)} />
+          </aside>
+        </div>
+      )}
+
+      <div className={cn("min-h-screen transition-[padding] duration-200", collapsed ? "lg:pl-20" : "lg:pl-56")}>
+        <header className="sticky top-0 z-20 flex h-16 items-center border-b border-[#DDE3E8] bg-white px-4 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="rounded-lg border border-[#DDE3E8] p-2 text-[#16365D]"
+            aria-label="Open navigation"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="ml-3 font-extrabold">Go<span className="text-[#4AB547]">Kapital</span></div>
+          <span className="ml-2 border-l border-[#DDE3E8] pl-2 text-sm text-[#667085]">Deal Analyzer</span>
+        </header>
+        <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>
+      </div>
+    </div>
+  );
+};
