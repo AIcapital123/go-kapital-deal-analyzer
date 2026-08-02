@@ -33,13 +33,14 @@ const SidebarContent = ({ collapsed = false, onNavigate }: SidebarContentProps) 
         <NavLink
           key={path}
           to={path}
-          end={path === "/"}
+          end={path === "/" || path === "/deals"}
           onClick={onNavigate}
           className={({ isActive }) => cn(
             "flex h-11 items-center gap-3 rounded-lg px-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-white/10 hover:text-white",
             isActive && "bg-[#4AB547] text-white hover:bg-[#43A840]",
             collapsed && "justify-center px-0",
           )}
+
           title={collapsed ? label : undefined}
         >
           <Icon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" />

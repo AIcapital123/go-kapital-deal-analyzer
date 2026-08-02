@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { AlertTriangle, ArrowLeft, CalendarDays, CheckCircle2, Download, Edit3, FileCheck2, FileSearch, FileText, Mail, MapPin, MoreHorizontal, Pencil, Phone, RefreshCw, Save, Sparkles, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { AnalysisSection, EmptyState, ErrorMessage, PageHeader, SummaryCard } from "@/components/Common";
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { DataTable, type TableColumn } from "@/components/DataTable";
@@ -124,7 +125,7 @@ const DealDetails = () => {
     { key: "liabilities", header: "Total Liabilities", render: (row) => formatCurrency(row.totalLiabilities) },
   ];
 
-  const averages = useMemo(() => {
+  const averages = (() => {
     if (!analysis?.bankStatements.length) return { deposits: 0, balance: 0, negative: 0, trend: "—" };
     const months = analysis.bankStatements;
     return {
@@ -133,7 +134,7 @@ const DealDetails = () => {
       negative: months.reduce((sum, month) => sum + month.negativeBalanceDays, 0),
       trend: "Declining 11.8%",
     };
-  }, [analysis]);
+  })();
 
   const NoteEditor = () => (
     <div>
