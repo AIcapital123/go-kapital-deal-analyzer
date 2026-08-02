@@ -10,6 +10,7 @@ import { AnalysisSection, EmptyState, ErrorMessage, PageHeader, SummaryCard } fr
 import { ConfirmationDialog } from "@/components/ConfirmationDialog";
 import { DataTable, type TableColumn } from "@/components/DataTable";
 import { RiskFlagCard } from "@/components/RiskFlagCard";
+import { SourceEvidenceList } from "@/components/SourceEvidenceList";
 import { StatusBadge } from "@/components/StatusBadge";
 import { analyzeDeal } from "@/services/analysisService";
 import { dealStorage } from "@/services/dealStorage";
@@ -45,14 +46,15 @@ const DealDetails = () => {
       const updated = dealStorage.update(deal.id, { analysis, status });
       setDeal(updated);
       setSearchParams({ tab: "analysis" });
-      toast.success("Prototype analysis refreshed");
+      toast.success("Sample Analysis refreshed");
     } catch {
       const updated = dealStorage.updateStatus(deal.id, "error");
       setDeal(updated);
-      toast.error("Analysis could not be completed");
+      toast.error("Sample Analysis could not be completed");
     } finally {
       setRunning(false);
     }
+
   };
 
   const saveNote = () => {
@@ -84,34 +86,44 @@ const DealDetails = () => {
     { key: "period", header: "Period", render: (document) => document.period || "—" },
     { key: "size", header: "File Size", render: (document) => formatFileSize(document.size) },
     { key: "date", header: "Upload Date", render: (document) => formatDate(document.uploadDate) },
-    { key: "status", header: "Processing Status", render: (document) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${document.processingStatus === "processed" ? "bg-green-50 text-green-700" : document.processingStatus === "needs_review" ? "bg-amber-50 text-amber-800" : "bg-slate-100 text-slate-700"}`}>{document.processingStatus === "processed" ? "Processed" : document.processingStatus === "needs_review" ? "Needs Review" : "Pending"}</span> },
+    { key: "status", header: "Processing Status", render: (document) => <span className={`rounded-full px-2.5 py-1 text-xs font-bold capitalize ${document.processingStatus === "processed" ? "bg-green-50 text-green-700" : document.processingStatus === "needs_review" || document.processingStatus === "failed" ? "bg-amber-50 text-amber-800" : "bg-blue-50 text-blue-700"}`}>{document.processingStatus.replace("_", " ")}</span> },
     { key: "actions", header: "Actions", className: "min-w-[280px]", render: (document) => <div className="flex gap-1"><Button variant="ghost" size="sm" className="rounded-lg" onClick={() => toast.info("Preview will be available when document storage is connected.")}><FileSearch className="mr-1 h-3.5 w-3.5" />Preview</Button><Button variant="ghost" size="sm" className="rounded-lg" onClick={() => toast.info("Download will be available when document storage is connected.")}><Download className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="sm" className="rounded-lg" onClick={() => toast.info("Replace will be available when document storage is connected.")}><Upload className="h-3.5 w-3.5" /></Button><Button variant="ghost" size="sm" className="rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => setDeleteDocumentId(document.id)}><Trash2 className="h-3.5 w-3.5" /></Button></div> },
   ];
 
   const analysis = deal.analysis;
   const bankColumns: TableColumn<BankStatementMonth>[] = [
     { key: "month", header: "Month", render: (row) => <span className="font-bold text-[#16365D]">{row.month}</span> },
-    { key: "deposits", header: "Total Deposits", render: (row) => formatCurrency(row.totalDeposits) },
+    { key: "gross", header: "Gross Deposits", render: (row) => formatCurrency(row.grossDeposits) },
+    { key: "transfers", header: "Transfers Excluded", render: (row) => formatCurrency(row.transfersExcluded) },
+    { key: "loan", header: "Loan / MCA Proceeds Excluded", render: (row) => formatCurrency(row.loanOrMcaProceedsExcluded) },
+    { key: "returns", header: "Returned Deposits Excluded", render: (row) => formatCurrency(row.returnedDepositsExcluded) },
+    { key: "other", header: "Other Exclusions", render: (row) => formatCurrency(row.otherExclusions) },
+    { key: "adjusted", header: "Adjusted Business Revenue", render: (row) => <span className="font-extrabold text-[#3A9738]">{formatCurrency(row.adjustedBusinessRevenue)}</span> },
     { key: "adb", header: "Average Daily Balance", render: (row) => formatCurrency(row.averageDailyBalance) },
-    { key: "count", header: "Number of Deposits", render: (row) => row.numberOfDeposits },
-    { key: "negative", header: "Negative Balance Days", render: (row) => <span className={row.negativeBalanceDays ? "font-bold text-amber-700" : "text-green-700"}>{row.negativeBalanceDays}</span> },
+    { key: "beginning", header: "Beginning Balance", render: (row) => formatCurrency(row.beginningBalance) },
     { key: "ending", header: "Ending Balance", render: (row) => formatCurrency(row.endingBalance) },
+    { key: "count", header: "Number of Deposits", render: (row) => row.numberOfDeposits },
+    { key: "negative", header: "Negative-Balance Days", render: (row) => <span className={row.negativeBalanceDays ? "font-bold text-amber-700" : "text-green-700"}>{row.negativeBalanceDays}</span> },
     { key: "nsf", header: "NSF / Overdraft", render: (row) => <span className={row.nsfCount ? "font-bold text-red-700" : "text-green-700"}>{row.nsfCount}</span> },
+    { key: "review", header: "Exclusions", render: () => <Button disabled variant="outline" size="sm" className="rounded-lg whitespace-nowrap">Review exclusions</Button> },
   ];
   const loanColumns: TableColumn<ExistingLoan>[] = [
     { key: "lender", header: "Funder or Lender", render: (row) => <span className="font-bold text-[#16365D]">{row.lender}</span> },
     { key: "account", header: "Account / ACH Name", render: (row) => row.accountName },
+
     { key: "date", header: "Funding Date", render: (row) => formatDate(row.fundingDate) },
     { key: "original", header: "Original Funding Amount", render: (row) => formatCurrency(row.originalAmount) },
     { key: "debit", header: "Observed Debit", render: (row) => formatCurrency(row.observedDebit) },
     { key: "frequency", header: "Repayment Frequency", render: (row) => row.frequency },
     { key: "monthly", header: "Estimated Monthly Payment", render: (row) => formatCurrency(row.estimatedMonthlyPayment) },
     { key: "status", header: "Position Status", render: (row) => <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-bold text-amber-800">{row.status}</span> },
+    { key: "evidence", header: "Source Evidence", className: "min-w-[180px]", render: (row) => <SourceEvidenceList evidence={row.sourceEvidence} compact /> },
   ];
   const recentColumns: TableColumn<RecentFundingActivity>[] = [
     { key: "funder", header: "Funder", render: (row) => <span className="font-bold text-[#16365D]">{row.funder}</span> },
     { key: "deposit", header: "Deposit Date and Amount", render: (row) => <span>{row.depositDate} · <strong>{formatCurrency(row.depositAmount)}</strong></span> },
     { key: "debit", header: "Observed Debit", render: (row) => formatCurrency(row.observedDebit) },
+
     { key: "frequency", header: "Frequency", render: (row) => row.frequency },
     { key: "source", header: "Source Document", render: (row) => row.sourceDocument },
   ];
@@ -123,16 +135,18 @@ const DealDetails = () => {
     { key: "income", header: "Net Income", render: (row) => formatCurrency(row.netIncome) },
     { key: "assets", header: "Total Assets", render: (row) => formatCurrency(row.totalAssets) },
     { key: "liabilities", header: "Total Liabilities", render: (row) => formatCurrency(row.totalLiabilities) },
+    { key: "evidence", header: "Source Evidence", className: "min-w-[180px]", render: (row) => <SourceEvidenceList evidence={row.sourceEvidence} compact /> },
   ];
 
   const averages = (() => {
-    if (!analysis?.bankStatements.length) return { deposits: 0, balance: 0, negative: 0, trend: "—" };
+    if (!analysis?.bankStatements.length) return { adjusted: 0, gross: 0, balance: 0, negative: 0, trend: "—" };
     const months = analysis.bankStatements;
     return {
-      deposits: months.reduce((sum, month) => sum + month.totalDeposits, 0) / months.length,
+      adjusted: months.reduce((sum, month) => sum + month.adjustedBusinessRevenue, 0) / months.length,
+      gross: months.reduce((sum, month) => sum + month.grossDeposits, 0) / months.length,
       balance: months.reduce((sum, month) => sum + month.averageDailyBalance, 0) / months.length,
       negative: months.reduce((sum, month) => sum + month.negativeBalanceDays, 0),
-      trend: "Declining 11.8%",
+      trend: "Declining 11.9%",
     };
   })();
 
@@ -150,10 +164,13 @@ const DealDetails = () => {
       <PageHeader
         title={deal.business.legalName}
         subtitle={`${formatCurrency(deal.business.requestedAmount)} requested • Created ${formatDate(deal.createdAt)}`}
-        actions={<><StatusBadge status={deal.status} /><Button variant="outline" onClick={runAnalysis} disabled={running} className="rounded-lg border-[#BFC9D2] font-bold text-[#16365D]">{running ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}{running ? "Analyzing…" : "Analyze Again"}</Button><Button onClick={() => toast.info("Deal editing will be enabled with the connected deal database.")} className="rounded-lg bg-[#16365D] font-bold hover:bg-[#102B4B]"><Edit3 className="mr-2 h-4 w-4" />Edit Deal</Button></>}
+        actions={<><StatusBadge status={deal.status} /><Button variant="outline" onClick={runAnalysis} disabled={running} className="rounded-lg border-[#BFC9D2] font-bold text-[#16365D]">{running ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}{running ? "Loading Sample…" : "Run Sample Analysis Again"}</Button><Button onClick={() => toast.info("Deal editing will be enabled with the connected deal database.")} className="rounded-lg bg-[#16365D] font-bold hover:bg-[#102B4B]"><Edit3 className="mr-2 h-4 w-4" />Edit Deal</Button></>}
       />
 
+      <div className="mb-5 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm leading-relaxed text-blue-900"><strong>Sample Analysis mode:</strong> This prototype will generate sample underwriting results. Uploaded file contents are not being analyzed yet.</div>
+
       <Tabs value={activeTab} onValueChange={(value) => setSearchParams(value === "overview" ? {} : { tab: value })}>
+
         <div className="mb-5 overflow-x-auto border-b border-[#DDE3E8]"><TabsList className="h-auto min-w-max justify-start rounded-none bg-transparent p-0">{["overview", "documents", "analysis", "notes"].map((tab) => <TabsTrigger key={tab} value={tab} className="rounded-none border-b-2 border-transparent px-5 py-3 font-bold capitalize text-[#667085] shadow-none data-[state=active]:border-[#4AB547] data-[state=active]:bg-transparent data-[state=active]:text-[#16365D] data-[state=active]:shadow-none">{tab}</TabsTrigger>)}</TabsList></div>
 
         <TabsContent value="overview" className="mt-0 space-y-5">
@@ -174,18 +191,22 @@ const DealDetails = () => {
 
         <TabsContent value="analysis" className="mt-0">
           {!analysis ? (
-            <EmptyState title="No analysis available" message="Run the prototype analysis to generate a structured deal summary using realistic mock results." action={<Button onClick={runAnalysis} disabled={running} className="rounded-lg bg-[#4AB547] font-bold hover:bg-[#3FA33D]"><Sparkles className="mr-2 h-4 w-4" />{running ? "Analyzing…" : "Analyze Deal"}</Button>} />
+            <EmptyState title="No Sample Analysis available" message="Run Sample Analysis to load synthetic underwriting results. Uploaded file contents will not be analyzed." action={<Button onClick={runAnalysis} disabled={running} className="rounded-lg bg-[#4AB547] font-bold hover:bg-[#3FA33D]"><Sparkles className="mr-2 h-4 w-4" />{running ? "Loading Sample…" : "Run Sample Analysis"}</Button>} />
           ) : (
             <div className="space-y-5">
-              <div className="flex flex-col gap-3 rounded-xl border border-green-200 bg-[#F0FAF0] p-4 text-sm text-[#286C2A] sm:flex-row sm:items-center sm:justify-between"><div><strong>Prototype analysis data</strong><span className="ml-2 text-[#417E43]">Generated {formatDate(analysis.generatedAt)}. Results are simulated and require manual review.</span></div><Button disabled variant="outline" className="rounded-lg border-green-300 bg-white text-[#286C2A]"><Download className="mr-2 h-4 w-4" />Export Summary · Coming later</Button></div>
+              <div className="flex flex-col gap-3 rounded-xl border border-green-200 bg-[#F0FAF0] p-4 text-sm text-[#286C2A] sm:flex-row sm:items-center sm:justify-between"><div><strong>Sample Analysis</strong><span className="ml-2 text-[#417E43]">Generated {formatDate(analysis.generatedAt)} from synthetic data. Uploaded file contents were not reviewed.</span><div className="mt-1 text-xs text-[#417E43]">Analysis {analysis.analysisVersion} • Prompt {analysis.promptVersion}{analysis.overallConfidence ? ` • Sample confidence ${Math.round(analysis.overallConfidence * 100)}%` : ""}</div></div><Button disabled variant="outline" className="rounded-lg border-green-300 bg-white text-[#286C2A]"><Download className="mr-2 h-4 w-4" />Export Summary · Coming later</Button></div>
 
-              <AnalysisSection title="1. Executive Deal Summary" description="Consolidated business profile and initial underwriting observations">
+              {analysis.warnings.length > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4"><div className="flex gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><div><h2 className="font-extrabold text-amber-900">Sample Analysis warnings</h2><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-amber-800">{analysis.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div></div></div>}
+
+              <AnalysisSection title="1. Executive Deal Summary" description="Sample business profile and underwriting observations">
                 <p className="rounded-lg bg-[#F8FAFB] p-4 text-sm leading-relaxed text-[#344054]">{analysis.summary}</p>
-                <dl className="mt-4 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-4"><DetailItem label="Business Name" value={deal.business.legalName} /><DetailItem label="Industry" value={deal.business.industry} /><DetailItem label="Time in Business" value={deal.business.startDate ? timeInBusiness(deal.business.startDate) : "Not provided"} /><DetailItem label="Location" value={deal.business.state} /><DetailItem label="Requested Loan Amount" value={formatCurrency(deal.business.requestedAmount)} /><DetailItem label="Estimated Monthly Revenue" value={formatCurrency(analysis.estimatedMonthlyRevenue)} /><DetailItem label="Existing Financing Positions" value={analysis.existingFinancingPositions} /><DetailItem label="Important Risk Flags" value={`${analysis.riskFlags.length} identified`} /></dl>
+                <dl className="mt-4 grid gap-x-8 sm:grid-cols-2 lg:grid-cols-4"><DetailItem label="Business Name" value={deal.business.legalName} /><DetailItem label="Industry" value={deal.business.industry} /><DetailItem label="Time in Business" value={deal.business.startDate ? timeInBusiness(deal.business.startDate) : "Not provided"} /><DetailItem label="Location" value={deal.business.state} /><DetailItem label="Requested Loan Amount" value={formatCurrency(deal.business.requestedAmount)} /><DetailItem label="Estimated Adjusted Monthly Revenue" value={formatCurrency(analysis.estimatedMonthlyRevenue)} /><DetailItem label="Existing Financing Positions" value={analysis.existingFinancingPositions} /><DetailItem label="Important Risk Flags" value={`${analysis.riskFlags.length} identified`} /></dl>
                 <div className="mt-4 rounded-lg border-l-4 border-[#4AB547] bg-[#F0FAF0] p-4"><p className="text-xs font-bold uppercase tracking-wide text-[#3A9738]">Overall cash-flow observation</p><p className="mt-1 text-sm leading-relaxed text-[#344054]">{analysis.cashFlowObservation}</p></div>
+                {analysis.metricEvidence?.estimatedMonthlyRevenue?.length ? <div className="mt-4"><p className="mb-2 text-xs font-bold uppercase tracking-wide text-[#667085]">Sample source evidence for important metrics</p><SourceEvidenceList evidence={analysis.metricEvidence.estimatedMonthlyRevenue} /></div> : null}
               </AnalysisSection>
 
-              <AnalysisSection title="2. Bank Statement Summary" description="Statements shown in descending chronological order"><DataTable columns={bankColumns} rows={analysis.bankStatements} rowKey={(row) => row.month} /><div className="mt-5 grid gap-4 md:grid-cols-4"><SummaryCard label="Average Monthly Deposits" value={formatCurrency(averages.deposits)} helper="Across all reviewed months" icon={FileCheck2} tone="green" /><SummaryCard label="Average Daily Balance" value={formatCurrency(averages.balance)} helper="Average of monthly ADB" icon={CalendarDays} tone="navy" /><SummaryCard label="Total Negative Days" value={averages.negative} helper="Across all reviewed months" icon={AlertTriangle} tone="amber" /><SummaryCard label="Deposit Trend" value={averages.trend} helper="February through May" icon={MoreHorizontal} tone="amber" /></div></AnalysisSection>
+              <AnalysisSection title="2. Bank Statement Summary" description="Adjusted business revenue excludes identified transfers, financing proceeds, returns, and other non-operating credits"><DataTable columns={bankColumns} rows={analysis.bankStatements} rowKey={(row) => row.month} /><div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-5"><SummaryCard label="Average Adjusted Business Revenue" value={formatCurrency(averages.adjusted)} helper="Primary sample revenue measure" icon={FileCheck2} tone="green" /><SummaryCard label="Average Gross Deposits" value={formatCurrency(averages.gross)} helper="Before sample exclusions" icon={FileCheck2} tone="navy" /><SummaryCard label="Average Daily Balance" value={formatCurrency(averages.balance)} helper="Average of monthly ADB" icon={CalendarDays} tone="navy" /><SummaryCard label="Total Negative Days" value={averages.negative} helper="Across all sample months" icon={AlertTriangle} tone="amber" /><SummaryCard label="Adjusted Revenue Trend" value={averages.trend} helper="February through May" icon={MoreHorizontal} tone="amber" /></div></AnalysisSection>
+
               <AnalysisSection title="3. Existing MCA and Loan Positions" description="Observed recurring obligations requiring verification"><DataTable columns={loanColumns} rows={analysis.existingLoans} rowKey={(row) => row.lender} /></AnalysisSection>
               <AnalysisSection title="4. Recent Funding and Debit Activity" description="Potential financing deposits matched to recurring debits"><DataTable columns={recentColumns} rows={analysis.recentFunding} rowKey={(row) => row.funder} /></AnalysisSection>
               <AnalysisSection title="5. Tax Return Summary" description="Reported results by tax year"><DataTable columns={taxColumns} rows={analysis.taxReturns} rowKey={(row) => String(row.taxYear)} /><div className="mt-4 grid gap-4 sm:grid-cols-2"><div className="rounded-lg border border-green-200 bg-green-50 p-4"><p className="text-xs font-bold uppercase tracking-wide text-green-700">Year-over-year revenue change</p><p className="mt-1 text-2xl font-extrabold text-green-800">+{analysis.revenueChange}%</p></div><div className="rounded-lg border border-[#DDE3E8] bg-[#F8FAFB] p-4"><p className="text-xs font-bold uppercase tracking-wide text-[#667085]">Tax return / bank comparison</p><p className="mt-1 text-sm leading-relaxed text-[#344054]">{analysis.taxBankInconsistency}</p></div></div></AnalysisSection>

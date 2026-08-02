@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ErrorMessage, PageHeader } from "@/components/Common";
 import { DocumentList } from "@/components/DocumentList";
 import { FileUploader } from "@/components/FileUploader";
-import { filesToDocuments } from "@/services/documentStorage";
+import { filesToDocuments, getStatementWarnings, statementMonths } from "@/services/documentStorage";
 import { dealStorage } from "@/services/dealStorage";
 import { analyzeDeal } from "@/services/analysisService";
 import { formatCurrency } from "@/lib/format";
@@ -34,10 +34,11 @@ const initialBusiness: Business = {
 const steps = [
   { number: 1, title: "Business Information", icon: Building2 },
   { number: 2, title: "Upload Documents", icon: Files },
-  { number: 3, title: "Review and Analyze", icon: FileCheck2 },
+  { number: 3, title: "Review and Sample Analysis", icon: FileCheck2 },
 ];
 
 const Field = ({ id, label, required, children }: { id: string; label: string; required?: boolean; children: React.ReactNode }) => (
+
   <div className="space-y-1.5">
     <Label htmlFor={id} className="text-sm font-bold text-[#344054]">{label}{required && <span className="ml-1 text-red-600">*</span>}</Label>
     {children}
@@ -83,6 +84,16 @@ const NewDeal = () => {
     if (!categoryCount("Tax return")) missing.push("Most recent business tax return (recommended)");
     return missing;
   }, [documents]);
+  const statementWarnings = useMemo(() => getStatementWarnings(documents), [documents]);
+
+  const updateDocumentPeriod = (id: string, month?: number, year?: number) => {
+    setDocuments((current) => current.map((document) => document.id === id ? {
+      ...document,
+      statementMonth: month,
+      statementYear: year,
+      period: month && year ? `${statementMonths[month - 1]} ${year}` : undefined,
+    } : document));
+  };
 
   const buildDeal = (status: Deal["status"]): Deal => {
     const now = new Date().toISOString();
@@ -109,11 +120,11 @@ const NewDeal = () => {
     try {
       const analysis = await analyzeDeal(deal);
       dealStorage.update(deal.id, { analysis, status: analysis.riskFlags.some((flag) => flag.severity === "High") ? "needs_review" : "completed" });
-      toast.success("Prototype analysis complete", { description: "Mock underwriting results are ready for review." });
+      toast.success("Sample Analysis complete", { description: "Sample underwriting results are ready for review." });
       navigate(`/deals/${deal.id}?tab=analysis`);
     } catch {
       dealStorage.updateStatus(deal.id, "error");
-      setError("The simulated analysis could not be completed. Please try again.");
+      setError("The Sample Analysis could not be completed. Please try again.");
       setAnalyzing(false);
     }
   };
@@ -121,11 +132,11 @@ const NewDeal = () => {
   if (analyzing) {
     return (
       <>
-        <PageHeader title="Analyzing Deal" subtitle={business.legalName} />
+        <PageHeader title="Running Sample Analysis" subtitle={business.legalName} />
         <div className="flex min-h-[520px] flex-col items-center justify-center rounded-xl border border-[#DDE3E8] bg-white p-8 text-center">
           <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-[#EEF9EE] text-[#3A9738]"><LoaderCircle className="h-10 w-10 animate-spin" /><Sparkles className="absolute -right-1 top-0 h-5 w-5" /></div>
-          <h2 className="mt-6 text-xl font-extrabold text-[#16365D]">Reviewing deal information</h2>
-          <p className="mt-2 max-w-md text-sm leading-relaxed text-[#667085]">We’re simulating document review, cash-flow calculations, and risk screening. This prototype uses mock results and does not send files to an external service.</p>
+          <h2 className="mt-6 text-xl font-extrabold text-[#16365D]">Preparing sample underwriting results</h2>
+          <p className="mt-2 max-w-md text-sm leading-relaxed text-[#667085]">This prototype is loading synthetic results for workflow testing. Uploaded file contents are not being read, extracted, or analyzed.</p>
           <div className="mt-6 w-full max-w-sm overflow-hidden rounded-full bg-[#E7EBEF]"><div className="h-2 w-4/5 animate-pulse rounded-full bg-[#4AB547]" /></div>
         </div>
       </>
@@ -178,8 +189,18 @@ const NewDeal = () => {
         {step === 2 && (
           <section className="rounded-xl border border-[#DDE3E8] bg-white p-5">
             <div className="mb-5 rounded-lg border border-green-200 bg-[#F0FAF0] p-4 text-sm leading-relaxed text-[#286C2A]"><strong>For best results,</strong> upload the completed application and at least four consecutive months of business bank statements.</div>
-            <FileUploader onFiles={(files) => { setDocuments((current) => [...current, ...filesToDocuments(files)]); setError(""); }} onError={setError} />
-            <DocumentList documents={documents} onCategoryChange={(id, category) => setDocuments((current) => current.map((document) => document.id === id ? { ...document, category } : document))} onRemove={(id) => setDocuments((current) => current.filter((document) => document.id !== id))} />
+            <FileUploader documents={documents} onFiles={(files) => setDocuments((current) => [...current, ...filesToDocuments(files)])} onError={setError} />
+            <DocumentList
+              documents={documents}
+              onCategoryChange={(id, category) => setDocuments((current) => current.map((document) => document.id === id ? {
+                ...document,
+                category,
+                ...(category !== "Bank statement" ? { statementMonth: undefined, statementYear: undefined, period: undefined } : {}),
+              } : document))}
+              onPeriodChange={updateDocumentPeriod}
+              onRemove={(id) => setDocuments((current) => current.filter((document) => document.id !== id))}
+            />
+            {statementWarnings.length > 0 && <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4"><div className="flex gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><div><h3 className="text-sm font-extrabold text-amber-900">Bank statement period review</h3><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-amber-800">{statementWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div></div></div>}
           </section>
         )}
 
@@ -187,6 +208,7 @@ const NewDeal = () => {
           <div className="grid gap-5 xl:grid-cols-[1.35fr_1fr]">
             <section className="rounded-xl border border-[#DDE3E8] bg-white">
               <div className="border-b border-[#E7EBEF] px-5 py-4"><h2 className="font-extrabold text-[#16365D]">Business Summary</h2></div>
+
               <dl className="grid gap-x-8 gap-y-5 p-5 sm:grid-cols-2">
                 {[ ["Legal business name", business.legalName], ["DBA", business.dbaName || "—"], ["Requested amount", formatCurrency(business.requestedAmount)], ["Industry", business.industry], ["State", business.state], ["Primary contact", business.contact.name], ["Email", business.contact.email], ["Uploaded documents", `${documents.length} files`] ].map(([label, value]) => <div key={label}><dt className="text-xs font-bold uppercase tracking-wide text-[#98A2B3]">{label}</dt><dd className="mt-1 text-sm font-bold text-[#16365D]">{value}</dd></div>)}
               </dl>
@@ -200,7 +222,8 @@ const NewDeal = () => {
                 </div>
               </section>
 
-              {missingItems.length > 0 && <section className="rounded-xl border border-amber-200 bg-amber-50 p-5"><div className="flex gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><div><h2 className="font-extrabold text-amber-900">Missing or recommended documents</h2><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-amber-800">{missingItems.map((item) => <li key={item}>{item}</li>)}</ul><p className="mt-3 text-xs text-amber-700">You can still run the prototype analysis with incomplete documents.</p></div></div></section>}
+              {(missingItems.length > 0 || statementWarnings.length > 0) && <section className="rounded-xl border border-amber-200 bg-amber-50 p-5"><div className="flex gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" /><div><h2 className="font-extrabold text-amber-900">Missing or recommended documents</h2><ul className="mt-2 list-disc space-y-1 pl-4 text-sm text-amber-800">{[...missingItems, ...statementWarnings].map((item) => <li key={item}>{item}</li>)}</ul><p className="mt-3 text-xs text-amber-700">You can still run Sample Analysis with incomplete document metadata.</p></div></div></section>}
+              <section className="rounded-xl border border-blue-200 bg-blue-50 p-5 text-sm leading-relaxed text-blue-900"><strong>Sample Analysis:</strong> This prototype will generate sample underwriting results. Uploaded file contents are not being analyzed yet.</section>
             </div>
           </div>
         )}
@@ -208,11 +231,12 @@ const NewDeal = () => {
         <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[#DDE3E8] pt-5 sm:flex-row sm:items-center sm:justify-between">
           <div>{step > 1 && <Button type="button" variant="outline" onClick={() => setStep((current) => current - 1)} className="w-full rounded-lg border-[#C9D2DA] sm:w-auto"><ChevronLeft className="mr-2 h-4 w-4" />Back</Button>}</div>
           {step < 3 ? (
+
             <Button type="submit" className="rounded-lg bg-[#16365D] font-bold text-white hover:bg-[#102B4B]">Continue<ChevronRight className="ml-2 h-4 w-4" /></Button>
           ) : (
             <div className="flex flex-col gap-2 sm:flex-row">
               <Button type="button" variant="outline" onClick={saveDraft} className="rounded-lg border-[#BFC9D2] font-bold text-[#16365D]"><Save className="mr-2 h-4 w-4" />Save as Draft</Button>
-              <Button type="button" onClick={runAnalysis} className="rounded-lg bg-[#4AB547] font-bold text-white hover:bg-[#3FA33D]"><Sparkles className="mr-2 h-4 w-4" />Analyze Deal</Button>
+              <Button type="button" onClick={runAnalysis} className="rounded-lg bg-[#4AB547] font-bold text-white hover:bg-[#3FA33D]"><Sparkles className="mr-2 h-4 w-4" />Run Sample Analysis</Button>
             </div>
           )}
         </div>

@@ -12,14 +12,15 @@ const statusStyles: Record<DealStatus, string> = {
 
 const statusLabels: Record<DealStatus, string> = {
   draft: "Draft",
-  ready: "Ready to Analyze",
-  analyzing: "Analyzing",
-  completed: "Completed",
+  ready: "Ready for Sample Analysis",
+  analyzing: "Loading Sample",
+  completed: "Sample Complete",
   needs_review: "Needs Review",
   error: "Error",
 };
 
 export const StatusBadge = ({ status }: { status: DealStatus }) => (
+
   <span className={cn("inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-bold", statusStyles[status])}>
     {status === "analyzing" && <span className="mr-1.5 mt-0.5 h-2 w-2 animate-pulse rounded-full bg-amber-500" />}
     {statusLabels[status]}

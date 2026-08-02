@@ -1,17 +1,41 @@
 import { useRef, useState } from "react";
 import { FileStack, UploadCloud } from "lucide-react";
 import { cn } from "@/lib/utils";
+import type { Document } from "@/types/deal";
 
 const acceptedExtensions = ["pdf", "jpg", "jpeg", "png"];
+const MAX_FILE_SIZE = 25 * 1024 * 1024;
+const MAX_DOCUMENTS = 20;
 
-export const FileUploader = ({ onFiles, onError }: { onFiles: (files: File[]) => void; onError: (message: string) => void }) => {
+export const FileUploader = ({ documents, onFiles, onError }: { documents: Document[]; onFiles: (files: File[]) => void; onError: (message: string) => void }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
   const processFiles = (list: FileList | null) => {
-    const files = Array.from(list ?? []);
-    const valid = files.filter((file) => acceptedExtensions.includes(file.name.split(".").pop()?.toLowerCase() ?? ""));
-    if (valid.length !== files.length) onError("Only PDF, JPG, JPEG, and PNG files can be added.");
+    const incoming = Array.from(list ?? []);
+    const valid: File[] = [];
+    const errors = new Set<string>();
+    const seenNames = new Set(documents.map((document) => document.name.toLowerCase()));
+
+    incoming.forEach((file) => {
+      const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
+      const normalizedName = file.name.toLowerCase();
+
+      if (!acceptedExtensions.includes(extension)) {
+        errors.add("Only PDF, JPG, JPEG, and PNG files can be added.");
+      } else if (file.size > MAX_FILE_SIZE) {
+        errors.add(`${file.name} exceeds the 25 MB file limit.`);
+      } else if (seenNames.has(normalizedName)) {
+        errors.add(`${file.name} was skipped because a file with that name is already selected.`);
+      } else if (documents.length + valid.length >= MAX_DOCUMENTS) {
+        errors.add("A deal can contain a maximum of 20 documents.");
+      } else {
+        valid.push(file);
+        seenNames.add(normalizedName);
+      }
+    });
+
+    onError([...errors].join(" "));
     if (valid.length) onFiles(valid);
   };
 
@@ -29,7 +53,8 @@ export const FileUploader = ({ onFiles, onError }: { onFiles: (files: File[]) =>
       <button type="button" onClick={() => inputRef.current?.click()} className="mt-5 inline-flex h-10 items-center gap-2 rounded-lg border border-[#BFC9D2] bg-white px-4 text-sm font-bold text-[#16365D] hover:bg-slate-50">
         <FileStack className="h-4 w-4" />Choose files
       </button>
-      <p className="mt-4 text-xs text-[#667085]">PDF, JPG, JPEG, or PNG • File contents are not retained in this prototype</p>
+      <p className="mt-4 text-xs text-[#667085]">PDF, JPG, JPEG, or PNG • 25 MB per file • {documents.length} of 20 selected</p>
+      <p className="mt-1 text-xs text-[#98A2B3]">File contents are not retained in this prototype.</p>
     </div>
   );
 };

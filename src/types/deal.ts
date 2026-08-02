@@ -16,6 +16,24 @@ export type DocumentCategory =
   | "Voided check"
   | "Other supporting document";
 
+export type DocumentProcessingStatus =
+  | "selected"
+  | "uploading"
+  | "uploaded"
+  | "extracting"
+  | "processed"
+  | "needs_review"
+  | "failed";
+
+export interface SourceEvidence {
+  documentId: string;
+  documentName: string;
+  pageNumber: number;
+  evidenceText: string;
+  confidence: number;
+  extractionMethod: "direct" | "calculated" | "inferred";
+}
+
 export interface Contact {
   name: string;
   email: string;
@@ -40,19 +58,32 @@ export interface Document {
   category: DocumentCategory;
   size: number;
   period?: string;
+  statementMonth?: number;
+  statementYear?: number;
+  storagePath?: string;
+  pageCount?: number;
+  extractionConfidence?: number;
+  extractionError?: string;
   uploadDate: string;
   uploadStatus: "uploaded" | "ready" | "error";
-  processingStatus: "pending" | "processed" | "needs_review";
+  processingStatus: DocumentProcessingStatus;
 }
 
 export interface BankStatementMonth {
   month: string;
-  totalDeposits: number;
+  grossDeposits: number;
+  transfersExcluded: number;
+  loanOrMcaProceedsExcluded: number;
+  returnedDepositsExcluded: number;
+  otherExclusions: number;
+  adjustedBusinessRevenue: number;
   averageDailyBalance: number;
+  beginningBalance: number;
+  endingBalance: number;
   numberOfDeposits: number;
   negativeBalanceDays: number;
-  endingBalance: number;
   nsfCount: number;
+  sourceEvidence?: SourceEvidence[];
 }
 
 export interface ExistingLoan {
@@ -64,6 +95,7 @@ export interface ExistingLoan {
   frequency: "Daily" | "Weekly" | "Monthly";
   estimatedMonthlyPayment: number;
   status: "Active" | "Likely active" | "Paid off";
+  sourceEvidence?: SourceEvidence[];
 }
 
 export interface RecentFundingActivity {
@@ -73,6 +105,7 @@ export interface RecentFundingActivity {
   observedDebit: number;
   frequency: string;
   sourceDocument: string;
+  sourceEvidence?: SourceEvidence[];
 }
 
 export interface TaxReturnSummary {
@@ -83,6 +116,7 @@ export interface TaxReturnSummary {
   netIncome: number;
   totalAssets: number;
   totalLiabilities: number;
+  sourceEvidence?: SourceEvidence[];
 }
 
 export interface RiskFlag {
@@ -92,11 +126,24 @@ export interface RiskFlag {
   explanation: string;
   sourceDocument: string;
   recommendation: string;
+  sourceEvidence?: SourceEvidence[];
+}
+
+export interface AnalysisMetricEvidence {
+  estimatedMonthlyRevenue?: SourceEvidence[];
+  existingFinancingPositions?: SourceEvidence[];
+  cashFlowObservation?: SourceEvidence[];
 }
 
 export interface AnalysisResult {
   generatedAt: string;
-  prototype: true;
+  dataSource: "sample" | "gemini";
+  model?: string;
+  promptVersion: string;
+  analysisVersion: string;
+  documentIds: string[];
+  warnings: string[];
+  overallConfidence?: number;
   estimatedMonthlyRevenue: number;
   existingFinancingPositions: number;
   cashFlowObservation: string;
@@ -108,6 +155,7 @@ export interface AnalysisResult {
   revenueChange: number;
   taxBankInconsistency: string;
   riskFlags: RiskFlag[];
+  metricEvidence?: AnalysisMetricEvidence;
 }
 
 export interface AnalystNote {

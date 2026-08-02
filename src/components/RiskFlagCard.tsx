@@ -1,4 +1,5 @@
 import { AlertCircle, AlertTriangle, Info } from "lucide-react";
+import { SourceEvidenceList } from "@/components/SourceEvidenceList";
 import { cn } from "@/lib/utils";
 import type { RiskFlag } from "@/types/deal";
 
@@ -22,6 +23,7 @@ export const RiskFlagCard = ({ flag }: { flag: RiskFlag }) => {
             <div><dt className="font-bold uppercase tracking-wide text-[#667085]">Source document</dt><dd className="mt-1 text-[#344054]">{flag.sourceDocument}</dd></div>
             <div><dt className="font-bold uppercase tracking-wide text-[#667085]">Recommended manual review</dt><dd className="mt-1 text-[#344054]">{flag.recommendation}</dd></div>
           </dl>
+          {flag.sourceEvidence?.length ? <div className="mt-3"><SourceEvidenceList evidence={flag.sourceEvidence} compact /></div> : null}
         </div>
       </div>
     </article>

@@ -1,7 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
 import { BarChart3, BriefcaseBusiness, ChevronLeft, ChevronRight, FilePlus2, Menu, Settings, X } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { dealStorage } from "@/services/dealStorage";
 
 const navigation = [
   { label: "Dashboard", path: "/", icon: BarChart3 },
@@ -61,12 +63,19 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  useEffect(() => {
+    dealStorage.getAll();
+    const warning = dealStorage.consumeRecoveryWarning();
+    if (warning) toast.warning("Prototype data restored", { description: warning });
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#F5F7F9] text-[#16365D]">
       <aside className={cn(
         "fixed inset-y-0 left-0 z-30 hidden transition-[width] duration-200 lg:block",
         collapsed ? "w-20" : "w-56",
       )}>
+
         <SidebarContent collapsed={collapsed} />
         <button
           type="button"
