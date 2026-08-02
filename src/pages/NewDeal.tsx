@@ -104,6 +104,7 @@ const NewDeal = () => {
       status,
       createdAt: now,
       updatedAt: now,
+      entryMode: "manual",
     };
   };
 

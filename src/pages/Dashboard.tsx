@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, CheckCircle2, CircleDollarSign, Clock3, FilePlus2, Search } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleDollarSign, Clock3, FilePlus2, FileText, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -42,6 +42,46 @@ const Dashboard = () => {
         subtitle="Organize business loan files and review Sample Analysis results."
         actions={<Button onClick={() => navigate("/deals/new")} className="h-10 rounded-lg bg-[#4AB547] px-4 font-bold text-white hover:bg-[#3FA33D]"><FilePlus2 className="mr-2 h-4 w-4" />New Deal</Button>}
       />
+
+      <div className="mb-6 grid gap-4 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => navigate("/deals/new")}
+          className="group flex flex-col rounded-xl border border-[#DDE3E8] bg-white p-5 text-left transition-all hover:border-[#4AB547] hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EEF3F8] text-[#16365D]">
+              <FileText className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-extrabold text-[#16365D]">Manual Deal Entry</h3>
+          </div>
+          <p className="mt-3 text-sm leading-relaxed text-[#667085]">
+            Enter the client's business and contact information manually, then optionally upload supporting documents.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#16365D] group-hover:text-[#4AB547]">
+            Enter Deal Manually <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => navigate("/underwriter/new")}
+          className="group flex flex-col rounded-xl border border-[#DDE3E8] bg-white p-5 text-left transition-all hover:border-[#4AB547] hover:shadow-md"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#EEF9EE] text-[#3A9738]">
+              <Sparkles className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-extrabold text-[#16365D]">Automated AI Underwriter</h3>
+          </div>
+          <p className="mt-3 text-sm leading-relaxed text-[#667085]">
+            Upload the loan application, bank statements, tax returns, and supporting documents to extract the client profile, research the business, and prepare a revenue summary.
+          </p>
+          <span className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-[#16365D] group-hover:text-[#4AB547]">
+            Open AI Underwriter <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+          </span>
+        </button>
+      </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <SummaryCard label="Total Deals" value={deals.length} helper="All deals in the current pipeline" icon={CircleDollarSign} tone="navy" />

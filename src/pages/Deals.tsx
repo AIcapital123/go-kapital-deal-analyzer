@@ -28,6 +28,7 @@ const Deals = () => {
     { key: "amount", header: "Requested Amount", render: (deal) => <span className="font-semibold">{formatCurrency(deal.business.requestedAmount)}</span> },
     { key: "industry", header: "Industry", render: (deal) => deal.business.industry },
     { key: "documents", header: "Documents", render: (deal) => <span>{deal.documents.length} file{deal.documents.length === 1 ? "" : "s"}</span> },
+    { key: "entryMode", header: "Entry Mode", render: (deal) => deal.entryMode === "automated" ? <span className="inline-flex items-center gap-1 rounded-full bg-[#EEF9EE] px-2.5 py-1 text-xs font-bold text-[#3A9738]">AI Underwriter</span> : <span className="rounded-full bg-[#EEF3F8] px-2.5 py-1 text-xs font-bold text-[#16365D]">Manual</span> },
     { key: "status", header: "Analysis Status", render: (deal) => <StatusBadge status={deal.status} /> },
     { key: "created", header: "Created Date", render: (deal) => formatDate(deal.createdAt) },
     { key: "action", header: "Action", render: (deal) => <Button variant="ghost" size="sm" className="rounded-lg text-[#16365D] hover:bg-[#EEF9EE] hover:text-[#3A9738]" onClick={(event) => { event.stopPropagation(); navigate(`/deals/${deal.id}`); }}>View <ArrowRight className="ml-1 h-4 w-4" /></Button> },

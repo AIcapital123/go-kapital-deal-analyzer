@@ -165,6 +165,151 @@ export interface AnalystNote {
   updatedAt: string;
 }
 
+export type EntryMode = "manual" | "automated";
+
+export type ExtractionSourceType =
+  | "user_manual"
+  | "loan_application"
+  | "bank_statement"
+  | "tax_return"
+  | "financial_statement"
+  | "public_record"
+  | "business_website"
+  | "ai_inference";
+
+export type ReviewStatus =
+  | "found"
+  | "not_found"
+  | "low_confidence"
+  | "conflicting"
+  | "publicly_corroborated"
+  | "user_confirmed";
+
+export interface BusinessAddress {
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+}
+
+export interface ExtractedField<T = string> {
+  value: T;
+  source: ExtractionSourceType;
+  sourceDocumentId?: string;
+  sourceDocumentName?: string;
+  pageNumber?: number;
+  confidence: number;
+  reviewStatus: ReviewStatus;
+  userEdited: boolean;
+  alternatives?: ExtractedFieldAlternative<T>[];
+}
+
+export interface ExtractedFieldAlternative<T = string> {
+  value: T;
+  source: ExtractionSourceType;
+  sourceDocumentId?: string;
+  sourceDocumentName?: string;
+  confidence: number;
+}
+
+export interface ExtractedBusinessProfile {
+  legalBusinessName: ExtractedField<string>;
+  dbaName: ExtractedField<string>;
+  ownerName: ExtractedField<string>;
+  businessAddress: ExtractedField<string>;
+  email: ExtractedField<string>;
+  phone: ExtractedField<string>;
+  industry: ExtractedField<string>;
+  businessStartDate: ExtractedField<string>;
+  timeInBusiness: ExtractedField<string>;
+  requestedLoanAmount: ExtractedField<number>;
+  useOfFunds: ExtractedField<string>;
+  ownershipInfo: ExtractedField<string>;
+  einLastFour: ExtractedField<string>;
+}
+
+export interface PublicResearchSource {
+  title: string;
+  publisher: string;
+  url: string;
+  retrievedAt: string;
+  supportingText: string;
+  sourceCategory: string;
+  matchConfidence: number;
+}
+
+export interface PublicBusinessProfile {
+  legalBusinessName: ExtractedField<string>;
+  dbaName: ExtractedField<string>;
+  businessAddress: ExtractedField<string>;
+  website: ExtractedField<string>;
+  phone: ExtractedField<string>;
+  email: ExtractedField<string>;
+  industry: ExtractedField<string>;
+  formationDate: ExtractedField<string>;
+  entityType: ExtractedField<string>;
+  registrationStatus: ExtractedField<string>;
+  description: ExtractedField<string>;
+  locations: ExtractedField<string>;
+  sources: PublicResearchSource[];
+}
+
+export interface ProfileConflict {
+  fieldKey: string;
+  fieldLabel: string;
+  applicationValue: string;
+  publicValue: string;
+  applicationSource: string;
+  publicSource: string;
+  resolution: "application" | "public" | "manual" | null;
+  resolvedValue?: string;
+}
+
+export interface MissingProfileField {
+  fieldKey: string;
+  fieldLabel: string;
+  required: boolean;
+}
+
+export interface ProfileExtractionResult {
+  businessProfile: ExtractedBusinessProfile;
+  conflicts: ProfileConflict[];
+  missingFields: MissingProfileField[];
+  generatedAt: string;
+  dataSource: "sample" | "ai";
+  warnings: string[];
+}
+
+export interface PublicResearchResult {
+  profile: PublicBusinessProfile | null;
+  conflicts: ProfileConflict[];
+  generatedAt: string;
+  dataSource: "sample" | "ai";
+  warnings: string[];
+}
+
+export interface UnderwritingSummary {
+  businessProfile: ExtractedBusinessProfile;
+  publicResearch: PublicResearchResult | null;
+  bankStatements: BankStatementMonth[];
+  existingLoans: ExistingLoan[];
+  recentFunding: RecentFundingActivity[];
+  taxReturns: TaxReturnSummary[];
+  riskFlags: RiskFlag[];
+  missingInfo: MissingProfileField[];
+  analystNotes: string;
+  generatedAt: string;
+  dataSource: "sample" | "ai";
+  warnings: string[];
+  averageMonthlyGrossDeposits: number;
+  averageMonthlyAdjustedRevenue: number;
+  averageDailyBalance: number;
+  revenueTrend: string;
+  totalNegativeDays: number;
+  totalNsfEvents: number;
+  estimatedMonthlyFinancingPayments: number;
+}
+
 export interface Deal {
   id: string;
   business: Business;
@@ -172,6 +317,9 @@ export interface Deal {
   status: DealStatus;
   createdAt: string;
   updatedAt: string;
+  entryMode?: EntryMode;
+  extractionResult?: ProfileExtractionResult;
+  publicResearchResult?: PublicResearchResult;
   analysis?: AnalysisResult;
   analystNote?: AnalystNote;
 }

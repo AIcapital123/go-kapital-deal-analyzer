@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { NavLink } from "react-router-dom";
-import { BarChart3, BriefcaseBusiness, ChevronLeft, ChevronRight, FilePlus2, Menu, Settings, X } from "lucide-react";
+import { BarChart3, BriefcaseBusiness, ChevronLeft, ChevronRight, FilePlus2, Menu, Settings, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { dealStorage } from "@/services/dealStorage";
@@ -8,6 +8,7 @@ import { dealStorage } from "@/services/dealStorage";
 const navigation = [
   { label: "Dashboard", path: "/", icon: BarChart3 },
   { label: "New Deal", path: "/deals/new", icon: FilePlus2 },
+  { label: "AI Underwriter", path: "/underwriter/new", icon: Sparkles },
   { label: "Deals", path: "/deals", icon: BriefcaseBusiness },
   { label: "Settings", path: "/settings", icon: Settings },
 ];
@@ -23,9 +24,14 @@ const SidebarContent = ({ collapsed = false, onNavigate }: SidebarContentProps) 
       {collapsed ? (
         <span className="text-lg font-extrabold tracking-tight text-[#69C966]">GK</span>
       ) : (
-        <div>
-          <div className="text-xl font-extrabold tracking-tight">Go<span className="text-[#69C966]">Kapital</span></div>
-          <div className="mt-0.5 text-xs font-medium text-slate-300">Deal Analyzer</div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-auto items-center rounded-lg bg-white px-2.5 py-1.5 shadow-sm">
+            <img src="/brand/gokapital-logo.svg" alt="GoKapital" className="h-7 w-auto" />
+          </div>
+          <div>
+            <div className="text-sm font-extrabold tracking-tight text-white">Deal Analyzer</div>
+            <div className="mt-0.5 text-[10px] font-medium text-slate-300">Internal Prototype</div>
+          </div>
         </div>
       )}
     </div>
@@ -114,7 +120,9 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
           >
             <Menu className="h-5 w-5" />
           </button>
-          <div className="ml-3 font-extrabold">Go<span className="text-[#4AB547]">Kapital</span></div>
+          <div className="ml-2 flex h-9 w-auto items-center rounded-lg bg-white px-2 py-1 shadow-sm">
+            <img src="/brand/gokapital-logo.svg" alt="GoKapital" className="h-6 w-auto" />
+          </div>
           <span className="ml-2 border-l border-[#DDE3E8] pl-2 text-sm text-[#667085]">Deal Analyzer</span>
         </header>
         <main className="mx-auto w-full max-w-[1500px] px-4 py-6 sm:px-6 lg:px-8 lg:py-8">{children}</main>

@@ -8,6 +8,7 @@ import Index from "@/pages/Index";
 import Deals from "@/pages/Deals";
 import NewDeal from "@/pages/NewDeal";
 import DealDetails from "@/pages/DealDetails";
+import AutomatedUnderwriter from "@/pages/AutomatedUnderwriter";
 import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 
@@ -25,6 +26,7 @@ const App = () => (
             <Route path="/deals" element={<Deals />} />
             <Route path="/deals/new" element={<NewDeal />} />
             <Route path="/deals/:id" element={<DealDetails />} />
+            <Route path="/underwriter/new" element={<AutomatedUnderwriter />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
