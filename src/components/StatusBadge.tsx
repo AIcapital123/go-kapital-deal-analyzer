@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import type { DealStatus } from "@/types/deal";
 
@@ -10,21 +11,12 @@ const statusStyles: Record<DealStatus, string> = {
   error: "border-red-200 bg-red-50 text-red-700",
 };
 
-const statusLabels: Record<DealStatus, string> = {
-  draft: "Draft",
-  ready: "Ready for Sample Analysis",
-  analyzing: "Loading Sample",
-  completed: "Sample Complete",
-  needs_review: "Needs Review",
-  error: "Error",
+export const StatusBadge = ({ status }: { status: DealStatus }) => {
+  const { t } = useTranslation();
+  return (
+    <span className={cn("inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-bold", statusStyles[status])}>
+      {status === "analyzing" && <span className="mr-1.5 mt-0.5 h-2 w-2 animate-pulse rounded-full bg-amber-500" />}
+      {t("status." + status)}
+    </span>
+  );
 };
-
-export const StatusBadge = ({ status }: { status: DealStatus }) => (
-
-  <span className={cn("inline-flex whitespace-nowrap rounded-full border px-2.5 py-1 text-xs font-bold", statusStyles[status])}>
-    {status === "analyzing" && <span className="mr-1.5 mt-0.5 h-2 w-2 animate-pulse rounded-full bg-amber-500" />}
-    {statusLabels[status]}
-  </span>
-);
-
-export { statusLabels };

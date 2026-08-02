@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   AlertTriangle, ArrowRight, Building2, Check, ChevronLeft, ChevronRight,
   Clock3, CreditCard, FileCheck2, FileSearch, Globe, Info,
@@ -31,12 +32,12 @@ import {
   SampleNotice, SectionCard,
 } from "@/components/underwriter/UnderwriterHelpers";
 
-const steps = [
-  { number: 1, title: "Upload Documents", icon: UploadCloud },
-  { number: 2, title: "Extract Application & Business Info", icon: FileSearch },
-  { number: 3, title: "Search Public Business Info", icon: Globe },
-  { number: 4, title: "Review & Confirm Profile", icon: FileCheck2 },
-  { number: 5, title: "Generate Revenue Summary", icon: Sparkles },
+const stepsFn = [
+  { number: 1, key: "underwriter.step1", icon: UploadCloud },
+  { number: 2, key: "underwriter.step2", icon: FileSearch },
+  { number: 3, key: "underwriter.step3", icon: Globe },
+  { number: 4, key: "underwriter.step4", icon: FileCheck2 },
+  { number: 5, key: "underwriter.step5", icon: Sparkles },
 ];
 
 const profileFields: { key: keyof ExtractedBusinessProfile; label: string }[] = [
@@ -86,10 +87,12 @@ const convertSummary = (s: UnderwritingSummary, docs: Document[]) => ({
   riskFlags: s.riskFlags,
 });
 
-const Stepper = ({ step }: { step: number }) => (
+const Stepper = ({ step }: { step: number }) => {
+  const { t } = useTranslation();
+  return (
   <div className="mb-6 rounded-xl border border-[#DDE3E8] bg-white p-4 sm:p-5">
     <ol className="grid gap-3 sm:grid-cols-5">
-      {steps.map(({ number, title, icon: Icon }, index) => {
+      {stepsFn.map(({ number, key, icon: Icon }, index) => {
         const complete = number < step;
         const active = number === step;
         return (
@@ -98,19 +101,21 @@ const Stepper = ({ step }: { step: number }) => (
               {complete ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] font-bold uppercase tracking-wide text-[#98A2B3]">Step {number}</p>
-              <p className={cn("truncate text-sm font-bold", active || complete ? "text-[#16365D]" : "text-[#667085]")}>{title}</p>
+              <p className="text-[11px] font-bold uppercase tracking-wide text-[#98A2B3]">{t("underwriter.step")} {number}</p>
+              <p className={cn("truncate text-sm font-bold", active || complete ? "text-[#16365D]" : "text-[#667085]")}>{t(key)}</p>
             </div>
-            {index < steps.length - 1 && <div className="absolute left-11 top-4 -z-10 hidden h-px w-full bg-[#DDE3E8] sm:block" />}
+            {index < stepsFn.length - 1 && <div className="absolute left-11 top-4 -z-10 hidden h-px w-full bg-[#DDE3E8] sm:block" />}
           </li>
         );
       })}
     </ol>
   </div>
-);
+  );
+};
 
 
 const AutomatedUnderwriter = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -132,15 +137,15 @@ const AutomatedUnderwriter = () => {
   };
 
   const runSampleExtraction = async () => {
-    if (!documents.length) { setError("Upload at least one document before extraction."); return; }
+    if (!documents.length) { setError(t("underwriter.uploadAtLeast")); return; }
     setBusy(true); setError("");
     try {
       const result = await documentExtractionService.extract(documents);
       setExtraction(result);
       setProfile(JSON.parse(JSON.stringify(result.businessProfile)) as ExtractedBusinessProfile);
       setConflicts(result.conflicts.map((c) => ({ ...c })));
-      toast.success("Sample extraction complete");
-    } catch { setError("Sample extraction could not be completed."); }
+      toast.success(t("underwriter.extractionComplete"));
+    } catch { setError(t("underwriter.extractionError")); }
     finally { setBusy(false); }
   };
 
@@ -155,8 +160,8 @@ const AutomatedUnderwriter = () => {
         result.conflicts.forEach((c) => { if (!keys.has(c.fieldKey)) merged.push({ ...c }); });
         return merged;
       });
-      toast.success("Sample public research complete");
-    } catch { setError("Sample public research could not be completed."); }
+      toast.success(t("underwriter.researchComplete"));
+    } catch { setError(t("underwriter.researchError")); }
     finally { setBusy(false); }
   };
 
@@ -189,8 +194,8 @@ const AutomatedUnderwriter = () => {
     try {
       const result = await underwritingAnalysisService.generate(profile, publicResearch, documents);
       setSummary(result);
-      toast.success("Sample underwriting summary generated");
-    } catch { setError("Sample summary could not be completed."); }
+      toast.success(t("underwriter.summaryComplete"));
+    } catch { setError(t("underwriter.summaryError")); }
     finally { setBusy(false); }
   };
 
@@ -213,7 +218,7 @@ const AutomatedUnderwriter = () => {
 
   const goNext = () => {
     setError("");
-    if (step === 1 && !documents.length) { setError("Upload at least one document to continue."); return; }
+    if (step === 1 && !documents.length) { setError(t("underwriter.uploadError")); return; }
     setStep((s) => Math.min(5, s + 1));
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -223,11 +228,11 @@ const AutomatedUnderwriter = () => {
   if (creating) {
     return (
       <>
-        <PageHeader title="Creating Deal" />
+        <PageHeader title={t("underwriter.creatingDeal")} />
         <div className="flex min-h-[520px] flex-col items-center justify-center rounded-xl border border-[#DDE3E8] bg-white p-8 text-center">
           <LoaderCircle className="h-12 w-12 animate-spin text-[#4AB547]" />
-          <h2 className="mt-6 text-xl font-extrabold text-[#16365D]">Saving your deal...</h2>
-          <p className="mt-2 max-w-md text-sm text-[#667085]">Routing to the Deal Details page.</p>
+          <h2 className="mt-6 text-xl font-extrabold text-[#16365D]">{t("underwriter.savingDeal")}</h2>
+          <p className="mt-2 max-w-md text-sm text-[#667085]">{t("underwriter.routingDeal")}</p>
         </div>
       </>
     );
@@ -236,9 +241,9 @@ const AutomatedUnderwriter = () => {
   return (
     <>
       <button onClick={() => navigate("/")} className="mb-4 inline-flex items-center text-sm font-bold text-[#667085] hover:text-[#16365D]">
-        <ChevronLeft className="mr-1 h-4 w-4" />Back to Dashboard
+        <ChevronLeft className="mr-1 h-4 w-4" />{t("underwriter.backToDashboard")}
       </button>
-      <PageHeader title="Automated AI Underwriter" subtitle="Upload documents, extract the business profile, research public records, and prepare a revenue summary." />
+      <PageHeader title={t("underwriter.title")} subtitle={t("underwriter.subtitle")} />
       <Stepper step={step} />
       {error && <div className="mb-4"><ErrorMessage message={error} /></div>}
 
@@ -390,6 +395,7 @@ const AutomatedUnderwriter = () => {
 };
 
 const SummaryView = ({ summary }: { summary: UnderwritingSummary; documents: Document[] }) => {
+  const { t } = useTranslation();
   const bankCols: TableColumn<BankStatementMonth>[] = [
     { key: "month", header: "Month", render: (r) => <span className="font-bold text-[#16365D]">{r.month}</span> },
     { key: "gross", header: "Gross Deposits", render: (r) => formatCurrency(r.grossDeposits) },
